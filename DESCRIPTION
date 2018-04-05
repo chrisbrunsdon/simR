@@ -1,0 +1,17 @@
+Package: simR
+Type: Package
+Title: Fits Spatial Interaction Models
+Version: 0.1.0
+Author: Chris Brunsdon
+Maintainer: Chris Brunsdon <christopher.brunsdon@mu.ie>
+Description: Fits spatial interaction models in tidy data form - including unconstrained, singly constrained and doubly constrained models. Calibration is via Poisson regression using a GLM.
+License: GPL-3
+Encoding: UTF-8
+LazyData: false
+Imports:
+  tidyverse,
+  sf
+Suggests:
+  tmap,
+  tmaptools
+RoxygenNote: 6.0.1
