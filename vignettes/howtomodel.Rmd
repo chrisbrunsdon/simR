@@ -4,7 +4,7 @@ author: "Chris Brunsdon"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Using the simR Package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,52 +19,115 @@ knitr::opts_chunk$set(
 The `simR` package allows spatial interaction models (SIMs) to be fitted easily. In particular:
 
 - it works well within the `dplyr` 'pipeline' approach.
+- more generally it works with the 'tidy data' and 'tidyverse' paradigms.
 - it makes use of the 'Poisson regression' method for calibrating SIMs.
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+## Getting started
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+Firstly - load the package.  Because of the 'tidyverse' focus of the package, load this as well:
 
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r, message=FALSE}
+library(simR)
+library(tidyverse)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+This package essentially works with geographical data.  Although one could use SIMs without drawing any maps, the author feels this is essentially lacking.  For that reason,  it is also worth loading the `sf` and `tmap` packages^[Install these packages if you haven't done already!].
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{r,message=FALSE}
+library(sf)
+library(tmap)
 ```
 
-Also a quote using `>`:
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+Sample data for the package relates the Local Authority areas in the East Midlands of the UK.  Here is the `simplefeatures` table showing the areas:
+
+```{r}
+data(eastmid_sf)
+tm_shape(eastmid_sf) + tm_borders()
+```
+
+There is also travel-to-work data - basically these are counts of the number of people travelling from one Local Authority area to another (or to itself).  This is organised so that each row corresponds to a single origin-destination pair:
+
+```{r}
+data(eastmid_ttw)
+eastmid_ttw
+```
+
+The columns are:
+
+- `From` : The name of the origin Local Authority area.
+- `To` : The name of the destination Local Authority area.
+- `Count` : The number of people travelling to work for the origin/destination pair.
+- `Dist` : The 'crow flies' diustancew between the origin and destination.
+
+Now fit a model:
+
+```{r}
+eastmid_ttw %>% doubly_constrained_sim(From,To,Dist,Count)
+```
+
+## What's Going On?
+
+At this stage,  this might make little sense unless you are familiar withs SIMs.  However,  here are a few words of explanation.  The `doubly_constrained_sim` function fits a doubly constrained SIM model - this predicts the interaction between origin and destination - here this is the number of people travelling to work from the origin to the destation,  ensuring that the total number of people leaving the origin,  and the total number arriving at the destination agree with the observed figures,  taking into account a 'cost deterrence' effect, where more costly trips are less likely to happen,  given these constraints. 
+
+The function works like `dplyr` type functions,  so that the arguments can be specified as column names in a data frame,  without having to quote them.  It returns an object of class 'sim' (which inherits from the class 'glm').
+
+The model is of the form 
+
+$$
+\hat{T_{ij}} = A_iB_j\exp\left(-\frac{ C_{ij}}{\gamma} \right)
+$$
+Where $A_i$ and $B_j$ are 'balancing terms' to make the constraints apply and $\gamma$ is a cost deterrence parameter. 'cost' here is used broadly,  and can generally represent any measure of effort needed to travel from zone $i$ to zone $j$. $\hat{T_{ij}}$ is the interaction between zones $i$ and $j$. The 'hat' on the $\hat{T_{ij}}$ denotes that this is the *modelled* interaction - the actual interaction is $T_{ij}$ (no hat).  This is the `Count` column in the example data set `eastmid_ttw`.  $\gamma$ here corresponds to the 'Cost Denominator Parameter' in the printout.  Since units here are in Km this is just over 8 Km.  When the deterrence function is exponential,  as in the model here,  a 'half life' cost can be calculated.  Assuming all other characteristics of an origin and destimation are fixed,  for every whole number multiple of this cost the amount of interaction is halved. Here this is a distance - and has a value of a little under 6km.
+
+Note that this is a 'toy' data set - ideally one would use more geographical detail,  and a more realistic cost distance - such as travel time.  Also,  the cost when the origin and the destination are the same is generally not zero! However,  the computing procedures are the same.  In the fullness of time I'll replace these distances with something more convincing...
+
+## Using the SIM Model Object
+
+In the first section,  a doubly constrained SIM model was fitted,  but nothing really done with it.   To do things with it,  the object should be stored:
+
+```{r}
+eastmid_ttw %>% doubly_constrained_sim(From,To,Dist,Count) -> sim_model
+```
+
+Then it is possible to add the fitted $\hat{T_{ij}}$ values to the `eastmids_ttw` data frame.  
+
+```{r}
+eastmid_ttw %>% add_sim_fitted(sim_model) -> eastmid_ttw_fitted
+eastmid_ttw_fitted
+```
+
+We can now check that the calibration really is constrained to make the total sums going in to the destinations in the fitted values agree with those in the observed counts:
+
+```{r fit_ok}
+eastmid_ttw_fitted %>% group_by(To) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted))
+```
+
+It seems to!  The same could be done for the origins.  
+
+Finally,  make a map.  Here we'll filter out the fitted trips to Derby and map them,  and compare them to the observed trips.
+
+
+```{r map_it}
+eastmid_ttw_fitted %>% filter(To=='Derby') -> to_derby
+to_derby
+```
+
+To map this,  we need to join the table `to_derby` to the `eastmid_sf` simple feature table.
+
+```{r}
+eastmid_sf %>% left_join(to_derby,by=c("name"="From")) -> to_derby_sf
+```
+
+
+So now mapping is possible...
+
+```{r}
+legend_style <- tm_legend(legend.position=c('right','bottom'),
+                          legend.text.size=0.4)
+tm_shape(to_derby_sf) + tm_polygons(col='Fitted',style='fisher') + legend_style
+tm_shape(to_derby_sf) + tm_polygons(col='Count',style='fisher') + legend_style
+```
+
+
+
