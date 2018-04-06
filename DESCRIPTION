@@ -1,7 +1,7 @@
 Package: simR
 Type: Package
 Title: Spatial Interaction Models in R
-Version: 0.1.0
+Version: 0.2.0
 Author: Chris Brunsdon
 Maintainer: Chris Brunsdon <christopher.brunsdon@mu.ie>
 Description: Fits spatial interaction models in tidy data form - including unconstrained, singly constrained and doubly constrained models. Calibration is via Poisson regression using a GLM.
