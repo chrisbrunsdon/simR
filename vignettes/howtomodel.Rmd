@@ -79,6 +79,8 @@ $$
 $$
 Where $A_i$ and $B_j$ are 'balancing terms' to make the constraints apply and $\gamma$ is a cost deterrence parameter. 'cost' here is used broadly,  and can generally represent any measure of effort needed to travel from zone $i$ to zone $j$. $\hat{T_{ij}}$ is the interaction between zones $i$ and $j$. The 'hat' on the $\hat{T_{ij}}$ denotes that this is the *modelled* interaction - the actual interaction is $T_{ij}$ (no hat).  This is the `Count` column in the example data set `eastmid_ttw`.  $\gamma$ here corresponds to the 'Cost Denominator Parameter' in the printout.  Since units here are in Km this is just over 8 Km.  When the deterrence function is exponential,  as in the model here,  a 'half life' cost can be calculated.  Assuming all other characteristics of an origin and destimation are fixed,  for every whole number multiple of this cost the amount of interaction is halved. Here this is a distance - and has a value of a little under 6km.
 
+To understand the idea more it is worth reading these two articles by Adam Dennett - https://rpubs.com/adam_dennett/259068 and https://rpubs.com/adam_dennett/257231 - in many ways these are what prompted me to create the `simR` package.
+
 Note that this is a 'toy' data set - ideally one would use more geographical detail,  and a more realistic cost distance - such as travel time.  Also,  the cost when the origin and the destination are the same is generally not zero! However,  the computing procedures are the same.  In the fullness of time I'll replace these distances with something more convincing...
 
 ## Using the SIM Model Object

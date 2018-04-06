@@ -1,6 +1,6 @@
 Package: simR
 Type: Package
-Title: Fits Spatial Interaction Models
+Title: Spatial Interaction Models in R
 Version: 0.1.0
 Author: Chris Brunsdon
 Maintainer: Chris Brunsdon <christopher.brunsdon@mu.ie>
