@@ -1,0 +1,158 @@
+---
+title: "Different Types of SIM Model"
+author: "Chris Brunsdon"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Types of SIM - An Overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, message=FALSE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette assumes you have already worked through the basic introduction,  which broadly explains the purpose of the `simR` package,   and its basic use.   The type of spatial interaction model (SIM) shown there was the *doubly constrained* model,  in which the fitted interactions (in this case journeys to work) were constrained so that the total trips to each destination agreed with those for the observed interactions,   as did the total trips from each origin. The model was written as 
+
+$$
+\hat{T_{ij}} = kA_iB_j\exp\left(-\frac{c_{ij}}{\gamma}\right)
+$$
+
+In this case,  apart from calibrating a general *distance decay* effect (expressed in the same units as the 'cost' of transit from zone $i$ to zone $j$),  characteristics of the origin and destination zones were not considered.  Instead, each zone was given a general attraction 'balancing factor' and a single production 'balancing factor'.  These respectively represented the relative ability for zones to respectively attract people,  or produce people for the journeys to work,  for a given cost.  These are necessary to create a model capable of meeting the double constraints mentioned earlier.   These constraints can be stated algebraically as
+
+$$
+kB_j \sum_{i} A_i \exp\left(-\frac{c_{ij}}{\gamma}\right) = \sum_i T_{ij}
+$$
+and 
+
+$$
+kA_i \sum_{j} B_j \exp\left(-\frac{c_{ij}}{\gamma}\right) = \sum_j T_{ij}
+$$
+
+However,  it is also possible to drop either of these constraints.  Suppose,  for example the attractiveness  of zones was considered to be a function of some other variables - for example the number of people employed by large companies (total employees $>$ 500) in an area. This will not be the same as the number of people travelling to a place to work from the East Midlands data set for at least two reasons:
+
+  1. Not all people work for a large-scale employer
+  2. Some employees may come from outside of this region
+  
+However,  the attractiveness is still a function of this quantity - it seems reasonable that an area with more large-scale employers is likely to attract more journeys to work.   If this quantity is called $E_i$ for zone $i$ one could say 
+
+$$
+A_i = f(E_i)
+$$
+Typically fpr a multiplicative model an exponential-function based link is used:
+
+$$
+A_i = \exp(\alpha E_i)
+$$
+Thus the new model is
+
+
+$$
+\hat{T_{ij}} = k\exp(\alpha E_i) B_j\exp\left(-\frac{c_{ij}}{\gamma}\right)
+$$
+
+And since the $E_i$'s are fixed quantities only the sums from the origins can be constrained. However,  an advantage of the constraint relaxation is that once the model is calibrated,  we can answer 'what if' questions based on changing the $E_i$ values - for example if a new company opened in zone $i$,  offering 600 new jobs,  how might this change the travel-to-work patterns,  assuming (at least initially) that the working population of each zone does not change.  A model of this kind is called an *origin constrained SIM* - or possibly a *production constrained SIM*.  More broadly suppose there are several attractiveness measures - say $1 \cdots m$ - then overall the model is
+
+$$
+\hat{T_{ij}} = k\exp\left(\sum_m \alpha_m E_{mi} \right) B_j\exp\left(-\frac{c_{ij}}{\gamma}\right)
+$$
+
+
+
+Here the quantities to be calibrated are the balancing terms for the origins $\{B_j\}$ and $\{\alpha_m \}$ and $\gamma$.  
+
+## Calibrating An Origin Constrained SIM using `simR`
+
+This is done using the `orig_constrained_sim` function.  This is similar to the `doubly_constrained_sim` model,  but also requires a data frame giving the attractiveness variables for the destination.  Rather than specify the variables used to measure the attractiveness,  this function just presumes that all of the variables included are to be used in the model.  The attractiveness data frame has $m+1$ columns - $m$ of these are the variables $E_{1.}$ to $E_{m.}$ and the final column is a key to link each row of variables with the corresponding destination in the interaction data frame.  This should have the same column name as that,  and also the place names should match exactly.   Here,  the `eastmid_empl` data frame can be used:
+
+```{r getready}
+library(simR)
+library(tidyverse)
+data(eastmid_ttw)
+data(eastmid_empl)
+eastmid_empl
+```
+
+
+This has four columns (apart from the name of the area in the column `To`) - these are
+
+| Column Name | Description                     |
+|:------------|:--------------------------------|
+|`Micro`      | Number of employees 9 or less   |
+|`Small`      | Number of employees 10 to 49    |
+|`Medium`     | Number of employees 50 to 249   |
+|`Large`      | Number of employees 250 or more |
+  
+For each Local Authority area, each variable gives a count of the number of people employed in companies of the four size categories^[Source: Office for National Statistics via NOMIS: https://www.nomisweb.co.uk].  These four variables therefore provide a set of attractiveness measures.
+
+A SIM object can then be created:
+
+```{r ocsim}
+eastmid_ttw %>% orig_constrained_sim(From,To,eastmid_empl,Dist,Count) -> sim_o_const
+sim_o_const
+```
+
+
+The cost half life is quite similar to that before - around 5.8km.  
+
+The destination scores - the $\exp\left(\sum_m \alpha_m E_{mi} \right)$ valures for each area $i$ may be extracted via the `dest_scores` function.  This gives a data frame with the destination name (`dest`) and the associated score (`dest_score`) as columns:
+
+```{r dscores}
+sim_o_const %>% dest_scores -> dest_sc
+dest_sc 
+```
+
+As in the basic vignette,  these can be mapped via the `eastmid_sf` feature.
+
+```{r dsm}
+library(tmap)
+library(sf)
+eastmid_sf %>% left_join(dest_sc ,by=c('name'='dest')) -> eastmid_dest_sc
+legend_style <- tm_legend(legend.position=c('right','bottom'),
+                          legend.text.size=0.4)
+tm_shape(eastmid_dest_sc) + tm_polygons(col='dest_score', title='Attraction') +
+  legend_style
+
+```
+
+
+We can add fitted values to a data frame using this kind of model as well:
+
+```{r meow}
+eastmid_ttw %>% add_sim_fitted(sim_o_const) -> eastmid_ttw_fitted_oc
+eastmid_ttw_fitted_oc
+```
+
+and check that although we relaxed the constraint on the totals for each destination agreeing with the observed trips,  the dual constraint on the origins still holds:
+
+```{r fit_ok}
+eastmid_ttw_fitted_oc %>% group_by(From) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted))
+```
+ ... but it no longer does on the destinations.
+ 
+```{r not_fit_ok}
+eastmid_ttw_fitted_oc %>% group_by(To) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted))
+```
+ 
+It is also possible to identify whether the model is over- or under-fitting by computing the difference between the observed `Count` and the modelled `Fitted` trips to each destination as a percentage of the count.  
+
+```{r errs}
+eastmid_ttw_fitted_oc %>% group_by(To) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted)) %>%
+  transmute(To,Error=100*(Count-Fitted)/Count) -> 
+  eastmid_err
+eastmid_sf %>% left_join(eastmid_err ,by=c('name'='To')) -> 
+  eastmid_err_sf
+tm_shape(eastmid_err_sf) + tm_polygons(col='Error',title='Error (%)') +
+  legend_style + tm_style_col_blind()
+```
+
+There is a notable trend in the error here - in particular the model underpredicts in the south,  and overpredicts in the north east of the region (with a notable spatial anomaly at Lincoln - where it underpredicts again).  

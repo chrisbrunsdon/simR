@@ -2,25 +2,22 @@
 % Please edit documentation in R/orig_coefs.R
 \name{orig_coefs}
 \alias{orig_coefs}
-\title{Create a tbl with the}
+\title{Extract SIM model coefficients relating to origin}
 \usage{
 orig_coefs(sim_obj)
 }
 \arguments{
-\item{sim_obj}{A 'sim' object derived from that frame}
-
-\item{df}{A data frame}
-
-\item{colname}{A reference to the name of the new column - defaults to 'fitted'}
+\item{sim_obj}{A 'sim' object}
 }
 \value{
-The data frame with an extra column for the fitted value
+A tibble with a list of coefficient values - either a balancing term for each area or
+regression coefficients for the variables used to measure productiveness of each area.
 }
 \description{
-Create a tbl with the
+Extract SIM model coefficients relating to origin
 }
 \examples{
 require(tidyverse)
-eastmid_ttw \%>\% poisson_reg(From,To,Dist,Count) -> mdl
-eastmid_ttw \%>\% add_sim_fitted(mdl)
+eastmid_ttw \%>\% doubly_constrained_sim(From,To,Dist,Count) -> mdl
+mdl \%>\% orig_coefs
 }

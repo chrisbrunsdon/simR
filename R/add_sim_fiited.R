@@ -9,13 +9,13 @@
 #' eastmid_ttw %>% poisson_reg(From,To,Dist,Count) -> mdl
 #' eastmid_ttw %>% add_sim_fitted(mdl)
 #' @export
-add_sim_fitted <- function(df,sim_obj,colname) {
+add_sim_fitted <- function(df,sim_obj,colname,newdata=NULL) {
   if(missing(colname)) {
-    fitvar <- predict(sim_obj,type='response')
+    fitvar <- predict(sim_obj,type='response',newdata=newdata)
     return(df %>% mutate(Fitted=fitvar))
   } else {
     colname <- quo_name(enquo(colname))
-    fitvar <- predict(sim_obj,type='response')
+    fitvar <- predict(sim_obj,type='response',newdata=newdata)
     return(df %>% mutate(!!colname := fitvar))
   }
 }

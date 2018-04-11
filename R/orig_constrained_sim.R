@@ -26,6 +26,7 @@ orig_constrained_sim <- function(df,orig,dest,attr,cost,intr) {
   mdl <- glm(form,data=dfs,family=poisson())
   attr(mdl,"type") <- "orig"
   attr(mdl,"vars") <- c(orig=orig,dest=dest,cost=cost,intr=intr)
+  attr(mdl,"at") <- setdiff(colnames(attr),rlang::quo_text(dest))
   class(mdl) <- c("sim",class(mdl))
   return(mdl)
 }

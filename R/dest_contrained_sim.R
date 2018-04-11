@@ -26,6 +26,7 @@ dest_constrained_sim <- function(df,orig,dest,prod,cost,intr) {
   mdl <- glm(form,data=dfs,family=poisson())
   attr(mdl,"type") <- "dest"
   attr(mdl,"vars") <- c(orig=orig,dest=dest,cost=cost,intr=intr)
+  attr(mdl,"pr") <- setdiff(colnames(prod),rlang::quo_text(orig))
   class(mdl) <- c("sim",class(mdl))
   return(mdl)
 }

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Chris Brunsdon" />
 
-<meta name="date" content="2018-04-06" />
+<meta name="date" content="2018-04-10" />
 
 <title>Using the simR Package</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Using the <code>simR</code> Package</h1>
 <h4 class="author"><em>Chris Brunsdon</em></h4>
-<h4 class="date"><em>2018-04-06</em></h4>
+<h4 class="date"><em>2018-04-10</em></h4>
 
 
 
@@ -144,7 +144,7 @@ eastmid_ttw
 <p>The function works like <code>dplyr</code> type functions, so that the arguments can be specified as column names in a data frame, without having to quote them. It returns an object of class ‘sim’ (which inherits from the class ‘glm’).</p>
 <p>The model is of the form</p>
 <p><span class="math display">\[
-\hat{T_{ij}} = A_iB_j\exp\left(-\frac{ C_{ij}}{\gamma} \right)
+\hat{T_{ij}} = k A_iB_j\exp\left(-\frac{ C_{ij}}{\gamma} \right)
 \]</span> Where <span class="math inline">\(A_i\)</span> and <span class="math inline">\(B_j\)</span> are ‘balancing terms’ to make the constraints apply and <span class="math inline">\(\gamma\)</span> is a cost deterrence parameter. ‘cost’ here is used broadly, and can generally represent any measure of effort needed to travel from zone <span class="math inline">\(i\)</span> to zone <span class="math inline">\(j\)</span>. <span class="math inline">\(\hat{T_{ij}}\)</span> is the interaction between zones <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span>. The ‘hat’ on the <span class="math inline">\(\hat{T_{ij}}\)</span> denotes that this is the <em>modelled</em> interaction - the actual interaction is <span class="math inline">\(T_{ij}\)</span> (no hat). This is the <code>Count</code> column in the example data set <code>eastmid_ttw</code>. <span class="math inline">\(\gamma\)</span> here corresponds to the ‘Cost Denominator Parameter’ in the printout. Since units here are in Km this is just over 8 Km. When the deterrence function is exponential, as in the model here, a ‘half life’ cost can be calculated. Assuming all other characteristics of an origin and destimation are fixed, for every whole number multiple of this cost the amount of interaction is halved. Here this is a distance - and has a value of a little under 6km.</p>
 <p>To understand the idea more it is worth reading these two articles by Adam Dennett - <a href="https://rpubs.com/adam_dennett/259068" class="uri">https://rpubs.com/adam_dennett/259068</a> and <a href="https://rpubs.com/adam_dennett/257231" class="uri">https://rpubs.com/adam_dennett/257231</a> - in many ways these are what prompted me to create the <code>simR</code> package.</p>
 <p>Note that this is a ‘toy’ data set - ideally one would use more geographical detail, and a more realistic cost distance - such as travel time. Also, the cost when the origin and the destination are the same is generally not zero! However, the computing procedures are the same. In the fullness of time I’ll replace these distances with something more convincing…</p>
