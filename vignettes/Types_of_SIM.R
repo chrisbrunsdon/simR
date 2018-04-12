@@ -29,3 +29,25 @@ tm_shape(eastmid_dest_sc) + tm_polygons(col='dest_score', title='Attraction') +
   legend_style
 
 
+## ----meow----------------------------------------------------------------
+eastmid_ttw %>% add_sim_fitted(sim_o_const) -> eastmid_ttw_fitted_oc
+eastmid_ttw_fitted_oc
+
+## ----fit_ok--------------------------------------------------------------
+eastmid_ttw_fitted_oc %>% group_by(From) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted))
+
+## ----not_fit_ok----------------------------------------------------------
+eastmid_ttw_fitted_oc %>% group_by(To) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted))
+
+## ----errs----------------------------------------------------------------
+eastmid_ttw_fitted_oc %>% group_by(To) %>% 
+  summarise(Count=sum(Count),Fitted=sum(Fitted)) %>%
+  transmute(To,Error=100*(Count-Fitted)/Count) -> 
+  eastmid_err
+eastmid_sf %>% left_join(eastmid_err ,by=c('name'='To')) -> 
+  eastmid_err_sf
+tm_shape(eastmid_err_sf) + tm_polygons(col='Error',title='Error (%)') +
+  legend_style + tm_style_col_blind()
+

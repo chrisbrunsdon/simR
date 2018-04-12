@@ -4,7 +4,7 @@
 \alias{add_sim_fitted}
 \title{Add a column with the predicted data from a model}
 \usage{
-add_sim_fitted(df, sim_obj, colname)
+add_sim_fitted(df, sim_obj, colname, scenario = NULL)
 }
 \arguments{
 \item{df}{A data frame}
@@ -12,6 +12,8 @@ add_sim_fitted(df, sim_obj, colname)
 \item{sim_obj}{A 'sim' object derived from that frame}
 
 \item{colname}{A reference to the name of the new column - defaults to 'fitted'}
+
+\item{scenario}{A scenario for prediction.  If NULL fits are based on original data}
 }
 \value{
 The data frame with an extra column for the fitted value
